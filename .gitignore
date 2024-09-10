@@ -84,7 +84,7 @@ ipython_config.py
 
 # Ambiente virtual
 myenv/
-myenv312
+myenv312/
 
 #database
 mydatabase.db
