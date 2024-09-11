@@ -33,6 +33,12 @@ def add_load_date(element):
     return element
 
 
+# Função para salvar o dataframe em formato parquet
+def write_parquet(data, output_path):
+    table = pa.Table.from_pandas(pd.DataFrame(data))
+    pq.write_table(table, output_path)
+
+
 # Definir o pipeline
 def run_pipeline():
     options = PipelineOptions()
@@ -58,3 +64,11 @@ def run_pipeline():
             | 'Pré-processar strings' >> beam.Map(preprocess_data)
             | 'Adicionar DT_CARGA' >> beam.Map(add_load_date)
         )
+        
+        # Salvando os resultados em parquet
+        resultado | 'Escrever Parquet Resultado' >> beam.Map(write_parquet, 'output/resultado_query_processed.parquet')
+        ranking | 'Escrever Parquet Ranking' >> beam.Map(write_parquet, 'output/ranking_query_processed.parquet')
+
+
+if __name__ == '__main__':
+    run_pipeline()
