@@ -4,7 +4,6 @@ import csv
 import unicodedata
 from datetime import datetime
 import pytz
-from apache_beam.io.gcp.bigquery import TableSchema, TableFieldSchema
 
 # Função para remover acentuação e espaços em branco e padronizar em maiúsculas
 def preprocess_text(text):
