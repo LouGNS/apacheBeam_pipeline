@@ -4,6 +4,7 @@ import csv
 import unicodedata
 from datetime import datetime
 import pytz
+from apache_beam.io.gcp.bigquery import TableSchema, TableFieldSchema
 
 # Função para remover acentuação e espaços em branco e padronizar em maiúsculas
 def preprocess_text(text):
@@ -39,17 +40,19 @@ def remove_duplicates(elements):
             unique_elements.append(element)
     return unique_elements
 
-# Definindo o esquema dos dados como uma lista de dicionários
+# Definindo o esquema dos dados para o Parquet
 def get_schema():
-    return [
-        {'name': 'nome', 'type': 'STRING'},
-        {'name': 'cpf', 'type': 'STRING'},
-        {'name': 'email', 'type': 'STRING'},
-        {'name': 'numeroConta', 'type': 'STRING'},
-        {'name': 'numeroCartao', 'type': 'STRING'},
-        {'name': 'ranking', 'type': 'STRING'},
-        {'name': 'DT_CARGA', 'type': 'STRING'}
-    ]
+    return {
+        'fields': [
+            {'name': 'nome', 'type': 'STRING'},
+            {'name': 'cpf', 'type': 'STRING'},
+            {'name': 'email', 'type': 'STRING'},
+            {'name': 'numeroConta', 'type': 'STRING'},
+            {'name': 'numeroCartao', 'type': 'STRING'},
+            {'name': 'ranking', 'type': 'STRING'},
+            {'name': 'DT_CARGA', 'type': 'STRING'}
+        ]
+    }
 
 def run():
     options = PipelineOptions()
