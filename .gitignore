@@ -89,6 +89,8 @@ myenv312/
 #database
 mydatabase.db
 
+#img
+imagens/
 
 
 # pyenv
