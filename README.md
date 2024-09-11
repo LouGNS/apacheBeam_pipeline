@@ -6,7 +6,9 @@ Este repositório foi criado para compartilhar os resultados do pipeline desenvo
 
 - **`myenv312/`**: Ambiente virtual para Python.
 - **`Teste-Banco-ABC/`**: Diretório principal do projeto.
-  - **`output/`**: Pasta onde os arquivos de saída, como resultados de consultas, são armazenados.
+  - **`data/`**: Pasta onde estão os arquivos consumidos para gerar os resultados iniciais.
+  - **`etl/`**: Pasta onde esta os arquivos python para criação e teste do apache beam.
+  - **`output/`**: Pasta onde os arquivos de saída, como resultados de consultas e parquets, são armazenados.
   - **`requirements.txt`**: Lista de dependências do projeto.
   - **`README.md`**: Este arquivo.
 
@@ -107,3 +109,101 @@ HAVING SUM(tr.valorCompra) >= 400;
 
 **Implicação**:
 - **Exclusão**: De acordo com a regra de negócio, esses clientes são candidatos à exclusão da base de dados. Eles não se encaixam nos critérios de análise ou decisão de crédito definidos.
+
+
+# Pipeline ETL com Apache Beam
+
+Este projeto contém um pipeline ETL (Extract, Transform, Load) desenvolvido em Python utilizando a biblioteca Apache Beam. O pipeline processa arquivos CSV e gera arquivos Parquet com dados pré-processados.
+
+## Sumário
+
+- [Descrição do Projeto](#descrição-do-projeto)
+- [Pré-requisitos](#pré-requisitos)
+- [Instalação](#instalação)
+- [Como Usar](#como-usar)
+- [Estrutura do Código](#estrutura-do-código)
+
+## Descrição do Projeto
+
+O pipeline ETL realiza as seguintes etapas:
+
+1. **Leitura dos arquivos CSV**:
+   - `ranking_clientes.csv`
+   - `resultado_query.csv`
+
+2. **Pré-processamento dos dados**:
+   - Adição da coluna `DT_CARGA` com a data e hora atual em UTC.
+
+3. **Gravação dos dados em arquivos Parquet**:
+   - `ranking_clientes.parquet`
+   - `resultado_query.parquet`
+
+## Pré-requisitos
+
+Certifique-se de que você tem os seguintes pré-requisitos instalados:
+
+- Python 3.12.6 ou superior
+- Apache Beam
+- PyArrow
+
+Você pode instalar as dependências necessárias com o seguinte comando:
+
+```sh
+pip install apache-beam pyarrow pandas pytz
+```
+
+## Instalação
+
+1. **Clone o repositório**:
+
+   ```bash
+   git clone https://github.com/seu-usuario/seu-repositorio.git
+   ```
+  
+# Pipeline Apache Beam para Processamento de Dados
+
+Este projeto contém um pipeline Apache Beam para processar e transformar dados de arquivos CSV em arquivos Parquet. O pipeline realiza as seguintes operações:
+
+1. **Leitura de Dados**: Lê arquivos CSV contendo informações de clientes e resultados de consultas.
+2. **Pré-processamento**: Adiciona uma coluna com a data e hora atual, e converte valores para os tipos apropriados.
+3. **Gravação em Parquet**: Grava os dados processados em arquivos Parquet.
+
+## Requisitos
+
+Antes de executar o pipeline, certifique-se de ter as seguintes dependências instaladas:
+
+## Estrutura do Código
+O código está organizado da seguinte forma:
+
+1. Função preprocess_data(element):
+
+- **Adiciona a coluna DT_CARGA com a data e hora atual em UTC.** 
+
+- **Converte os valores das colunas cpf, numeroConta, e numeroCartao para inteiros, se presente e se o valor for numérico.**
+
+
+2. Função run():
+- ** **
+- **Define os caminhos para os arquivos CSV de entrada.**
+- **Lê e processa os dados dos arquivos CSV**.
+- **Escreve os dados processados em arquivos Parquet.**
+
+## Como Usar
+
+1. Configure os Caminhos dos Arquivos:
+
+- **Modifique as variáveis ranking_file_path e resultado_file_path na função run() para os caminhos absolutos dos seus arquivos CSV.**
+2. Execute o Pipeline:
+
+- **Salve o código em um arquivo Python, por exemplo, pipeline.py.**
+- **Execute o script Python:**
+
+ ```bash
+python pipeline.py
+ ```
+
+## Observações
+Certifique-se de que os arquivos CSV estão no formato correto e que os caminhos fornecidos estão corretos.
+O pipeline foi configurado para adicionar uma coluna DT_CARGA com a data e hora atual. Ajuste conforme necessário para atender aos requisitos específicos.
+
+
