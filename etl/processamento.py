@@ -24,3 +24,10 @@ def preprocess_data(row):
     row['email'] = preprocess_string(row['email'])
     row['cidade'] = preprocess_string(row['cidade'])
     return row
+
+
+# Função para adicionar a coluna DT_CARGA
+def add_load_date(element):
+    utc_now = datetime.now(pytz.utc).strftime('%Y-%m-%d %H:%M:%S')
+    element['DT_CARGA'] = utc_now
+    return element
