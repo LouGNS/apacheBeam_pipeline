@@ -1,3 +1,4 @@
+#este código foi feito para testar a escrita e gravação de arquivos parquet do apache beam
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
 import pyarrow as pa

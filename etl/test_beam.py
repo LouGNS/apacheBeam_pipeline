@@ -1,3 +1,4 @@
+#este código foi feito para verificar se as dependecias do beam foram instaladas e estão funcionando com sucesso
 import apache_beam as beam
 
 with beam.Pipeline() as pipeline:
