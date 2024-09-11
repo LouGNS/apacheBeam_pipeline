@@ -74,6 +74,7 @@ WHERE a.ativo = 1
   AND tr.dataCompra BETWEEN DATE('now', '-2 months') AND DATE('now')
 GROUP BY c.nome, c.cpf, c.email
 HAVING SUM(tr.valorCompra) >= 400;
+```
 
 
 
