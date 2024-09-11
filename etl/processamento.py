@@ -4,6 +4,9 @@ import csv
 import unicodedata
 from datetime import datetime
 import pytz
+from apache_beam.io import ReadFromText, WriteToParquet
+from apache_beam.typehints import schema
+from apache_beam.typehints.schemas import Schema
 
 # Função para remover acentuação e espaços em branco e padronizar em maiúsculas
 def preprocess_text(text):
@@ -19,6 +22,9 @@ def preprocess_data(element):
     element['nome'] = preprocess_text(element.get('nome', ''))
     element['cpf'] = element.get('cpf', '')
     element['email'] = preprocess_text(element.get('email', ''))
+    element['numeroConta'] = element.get('numeroConta', '')
+    element['numeroCartao'] = element.get('numeroCartao', '')
+    element['ranking'] = element.get('ranking', '')
 
     # Adiciona a coluna DT_CARGA com a data e horário atual em UTC
     element['DT_CARGA'] = datetime.now(pytz.utc).strftime('%Y-%m-%d %H:%M:%S')
@@ -36,21 +42,36 @@ def remove_duplicates(elements):
             unique_elements.append(element)
     return unique_elements
 
+# Definindo o esquema dos dados
+def get_schema():
+    return Schema({
+        'nome': 'STRING',
+        'cpf': 'STRING',
+        'email': 'STRING',
+        'numeroConta': 'STRING',
+        'numeroCartao': 'STRING',
+        'ranking': 'STRING',
+        'DT_CARGA': 'STRING'
+    })
+
 def run():
     options = PipelineOptions()
     p = beam.Pipeline(options=options)
 
+    # Caminhos absolutos para os arquivos CSV
+    ranking_file_path = 'C:/Users/User/OneDrive/Documentos/Luiz Gustavo/Teste Banco ABC/Teste-Banco-ABC/output/ranking_clientes.csv'
+    resultado_file_path = 'C:/Users/User/OneDrive/Documentos/Luiz Gustavo/Teste Banco ABC/Teste-Banco-ABC/output/resultado_query.csv'
+
     # Lê os arquivos CSV e aplica as transformações
     ranking_clients = (
         p
-        | 'Read ranking_clientes.csv' >> beam.io.ReadFromText('C:/Users/User/OneDrive/Documentos/Luiz Gustavo/Teste Banco ABC/Teste-Banco-ABC/output/ranking_clientes.csv', skip_header_lines=1)
+        | 'Read ranking_clientes.csv' >> beam.io.ReadFromText(ranking_file_path, skip_header_lines=1)
         | 'Parse ranking_clientes' >> beam.Map(lambda line: dict(zip(['cpf', 'numeroConta', 'numeroCartao', 'ranking'], next(csv.reader([line])))))
     )
 
-
     resultado_query = (
         p
-        | 'Read resultado_query.csv' >> beam.io.ReadFromText('C:/Users/User/OneDrive/Documentos/Luiz Gustavo/Teste Banco ABC/Teste-Banco-ABC/output/resultado_query.csv', skip_header_lines=1)
+        | 'Read resultado_query.csv' >> beam.io.ReadFromText(resultado_file_path, skip_header_lines=1)
         | 'Parse resultado_query' >> beam.Map(lambda line: dict(zip(['nome', 'cpf', 'email'], next(csv.reader([line])))))
         | 'Preprocess data' >> beam.Map(preprocess_data)
     )
@@ -62,8 +83,9 @@ def run():
         | 'Remove duplicates' >> beam.FlatMap(remove_duplicates)
     )
 
-    # Salva os dados processados no formato Parquet
-    merged_data | 'Write to Parquet' >> beam.io.WriteToParquet('output/processed_data.parquet')
+    # Salva os dados processados no formato Parquet com esquema
+    schema_ = get_schema()
+    merged_data | 'Write to Parquet' >> beam.io.WriteToParquet('output/processed_data.parquet', schema=schema_)
 
     result = p.run()
     result.wait_until_finish()
