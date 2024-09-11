@@ -5,8 +5,7 @@ import unicodedata
 from datetime import datetime
 import pytz
 from apache_beam.io import ReadFromText, WriteToParquet
-from apache_beam.typehints import schema
-from apache_beam.typehints.schemas import Schema
+from apache_beam.io.parquetio import _Schema
 
 # Função para remover acentuação e espaços em branco e padronizar em maiúsculas
 def preprocess_text(text):
@@ -44,7 +43,7 @@ def remove_duplicates(elements):
 
 # Definindo o esquema dos dados
 def get_schema():
-    return Schema({
+    return {
         'nome': 'STRING',
         'cpf': 'STRING',
         'email': 'STRING',
@@ -52,7 +51,7 @@ def get_schema():
         'numeroCartao': 'STRING',
         'ranking': 'STRING',
         'DT_CARGA': 'STRING'
-    })
+    }
 
 def run():
     options = PipelineOptions()
@@ -84,8 +83,10 @@ def run():
     )
 
     # Salva os dados processados no formato Parquet com esquema
-    schema_ = get_schema()
-    merged_data | 'Write to Parquet' >> beam.io.WriteToParquet('output/processed_data.parquet', schema=schema_)
+    merged_data | 'Write to Parquet' >> beam.io.WriteToParquet(
+        'output/processed_data.parquet',
+        schema=get_schema()
+    )
 
     result = p.run()
     result.wait_until_finish()
