@@ -31,3 +31,30 @@ def add_load_date(element):
     utc_now = datetime.now(pytz.utc).strftime('%Y-%m-%d %H:%M:%S')
     element['DT_CARGA'] = utc_now
     return element
+
+
+# Definir o pipeline
+def run_pipeline():
+    options = PipelineOptions()
+
+    with beam.Pipeline(options=options) as p:
+        # Lendo os CSVs
+        resultado = (
+            p
+            | 'Ler resultado_query CSV' >> beam.io.ReadFromText('output/resultado_query.csv', skip_header_lines=1)
+            | 'Dividir CSV Resultado' >> beam.Map(lambda line: dict(zip(['cpf', 'nome', 'email', 'cidade'], line.split(','))))
+        )
+        
+        ranking = (
+            p
+            | 'Ler ranking_query CSV' >> beam.io.ReadFromText('output/ranking_query.csv', skip_header_lines=1)
+            | 'Dividir CSV Ranking' >> beam.Map(lambda line: dict(zip(['cpf', 'ranking'], line.split(','))))
+        )
+        
+        # Pré-processamento dos dados
+        resultado = (
+            resultado
+            | 'Remover duplicados' >> beam.Distinct()
+            | 'Pré-processar strings' >> beam.Map(preprocess_data)
+            | 'Adicionar DT_CARGA' >> beam.Map(add_load_date)
+        )
