@@ -43,8 +43,8 @@ def run():
     # Lê os arquivos CSV e aplica as transformações
     ranking_clients = (
         p
-        | 'Read ranking_clients.csv' >> beam.io.ReadFromText('output/ranking_clients.csv', skip_header_lines=1)
-        | 'Parse ranking_clients' >> beam.Map(lambda line: dict(zip(['cpf', 'numeroConta', 'numeroCartao', 'ranking'], next(csv.reader([line])))))
+        | 'Read ranking_clientes.csv' >> beam.io.ReadFromText('output/ranking_clientes.csv', skip_header_lines=1)
+        | 'Parse ranking_clientes' >> beam.Map(lambda line: dict(zip(['cpf', 'numeroConta', 'numeroCartao', 'ranking'], next(csv.reader([line])))))
     )
 
     resultado_query = (
