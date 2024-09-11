@@ -33,7 +33,7 @@ Este repositório foi criado para compartilhar os resultados do pipeline desenvo
 
 
 ## Arquitetura do projeto:
-![Arquitetura completa do projeto](arquitetura-projeto.png)
+![Arquitetura completa do projeto](arquitetura_projeto.png)
 
 
 ## Campanha de Marketing por E-mail
