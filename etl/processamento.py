@@ -39,19 +39,17 @@ def remove_duplicates(elements):
             unique_elements.append(element)
     return unique_elements
 
-# Definindo o esquema dos dados
+# Definindo o esquema dos dados como uma lista de dicionários
 def get_schema():
-    return {
-        'fields': [
-            {'name': 'nome', 'type': 'STRING'},
-            {'name': 'cpf', 'type': 'STRING'},
-            {'name': 'email', 'type': 'STRING'},
-            {'name': 'numeroConta', 'type': 'STRING'},
-            {'name': 'numeroCartao', 'type': 'STRING'},
-            {'name': 'ranking', 'type': 'STRING'},
-            {'name': 'DT_CARGA', 'type': 'STRING'}
-        ]
-    }
+    return [
+        {'name': 'nome', 'type': 'STRING'},
+        {'name': 'cpf', 'type': 'STRING'},
+        {'name': 'email', 'type': 'STRING'},
+        {'name': 'numeroConta', 'type': 'STRING'},
+        {'name': 'numeroCartao', 'type': 'STRING'},
+        {'name': 'ranking', 'type': 'STRING'},
+        {'name': 'DT_CARGA', 'type': 'STRING'}
+    ]
 
 def run():
     options = PipelineOptions()
@@ -85,7 +83,10 @@ def run():
     # Salva os dados processados no formato Parquet com esquema
     merged_data | 'Write to Parquet' >> beam.io.WriteToParquet(
         'output/processed_data.parquet',
-        schema=get_schema()
+        schema=get_schema(),
+        # Define o formato do arquivo Parquet
+        file_name_suffix='.parquet',
+        shard_name_template='',
     )
 
     result = p.run()
