@@ -53,3 +53,19 @@ def run():
         | 'Parse resultado_query' >> beam.Map(lambda line: dict(zip(['nome', 'cpf', 'email'], next(csv.reader([line])))))
         | 'Preprocess data' >> beam.Map(preprocess_data)
     )
+
+    # Junta os dois datasets pelo CPF e remove duplicatas
+    merged_data = (
+        {'ranking': ranking_clients, 'resultado': resultado_query}
+        | 'Merge datasets' >> beam.CoGroupByKey()
+        | 'Remove duplicates' >> beam.FlatMap(remove_duplicates)
+    )
+
+    # Salva os dados processados no formato Parquet
+    merged_data | 'Write to Parquet' >> beam.io.WriteToParquet('output/processed_data.parquet')
+
+    result = p.run()
+    result.wait_until_finish()
+
+if __name__ == '__main__':
+    run()
