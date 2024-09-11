@@ -18,15 +18,6 @@ def preprocess_data(element):
     
     return element
 
-class DeduplicateByCPF(beam.PTransform):
-    def expand(self, pcoll):
-        return (
-            pcoll
-            | 'Map to KV (cpf)' >> beam.Map(lambda row: (row['cpf'], row))
-            | 'Group by CPF' >> beam.GroupByKey()
-            | 'Select first entry' >> beam.Map(lambda kv: kv[1][0])  # Seleciona o primeiro elemento para cada 'cpf'
-        )
-
 def run():
     print("Pipeline execution started")
     options = PipelineOptions()
@@ -50,13 +41,14 @@ def run():
     ranking_schema = ['cpf', 'numeroConta', 'numeroCartao', 'ranking']
     resultado_schema = ['nome', 'cpf', 'email']
 
-    # Pipeline para dados de ranking_clientes com deduplicação pelo campo 'cpf'
+    # Adicionando um timestamp para garantir arquivos únicos
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+    # Pipeline para dados de ranking_clientes
     ranking_clients = (
         read_csv(ranking_file_path, ranking_schema)
         | 'Preprocess Ranking Data' >> beam.Map(preprocess_data)
-        | 'Deduplicate Ranking Data by CPF' >> DeduplicateByCPF()  # Chama a transformação DeduplicateByCPF()
     )
-    
     ranking_schema_arrow = pa.schema([
         ('cpf', pa.int64()),
         ('numeroConta', pa.int64()),
@@ -64,29 +56,25 @@ def run():
         ('ranking', pa.string()),
         ('DT_CARGA', pa.string())
     ])
-    
     ranking_clients | 'Write ranking to Parquet' >> beam.io.WriteToParquet(
-        'output/ranking_clientes.parquet',
+        f'output/ranking_clientes_{timestamp}.parquet',  # Adiciona timestamp ao nome do arquivo
         schema=ranking_schema_arrow,
         file_name_suffix='.parquet'
     )
 
-    # Pipeline para dados de resultado_query com deduplicação pelo campo 'cpf'
+    # Pipeline para dados de resultado_query
     resultado_query = (
         read_csv(resultado_file_path, resultado_schema)
         | 'Preprocess Resultado Data' >> beam.Map(preprocess_data)
-        | 'Deduplicate Resultado Data by CPF' >> DeduplicateByCPF()  # Chama a transformação DeduplicateByCPF()
     )
-    
     resultado_schema_arrow = pa.schema([
         ('nome', pa.string()),
         ('cpf', pa.int64()),
         ('email', pa.string()),
         ('DT_CARGA', pa.string())
     ])
-    
     resultado_query | 'Write resultado to Parquet' >> beam.io.WriteToParquet(
-        'output/resultado_query.parquet',
+        f'output/resultado_query_{timestamp}.parquet',  # Adiciona timestamp ao nome do arquivo
         schema=resultado_schema_arrow,
         file_name_suffix='.parquet'
     )
