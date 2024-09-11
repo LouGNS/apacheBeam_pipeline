@@ -4,8 +4,6 @@ import csv
 import unicodedata
 from datetime import datetime
 import pytz
-from apache_beam.io import ReadFromText, WriteToParquet
-from apache_beam.io.parquetio import _Schema
 
 # Função para remover acentuação e espaços em branco e padronizar em maiúsculas
 def preprocess_text(text):
@@ -17,13 +15,13 @@ def preprocess_text(text):
 
 # Função de pré-processamento
 def preprocess_data(element):
-    # Preprocessa as colunas de cada arquivo
-    element['nome'] = preprocess_text(element.get('nome', ''))
-    element['cpf'] = element.get('cpf', '')
-    element['email'] = preprocess_text(element.get('email', ''))
-    element['numeroConta'] = element.get('numeroConta', '')
-    element['numeroCartao'] = element.get('numeroCartao', '')
-    element['ranking'] = element.get('ranking', '')
+    # Converte todas as colunas para string e aplica preprocessamento
+    element['nome'] = preprocess_text(str(element.get('nome', '')))
+    element['cpf'] = str(element.get('cpf', ''))
+    element['email'] = preprocess_text(str(element.get('email', '')))
+    element['numeroConta'] = str(element.get('numeroConta', ''))
+    element['numeroCartao'] = str(element.get('numeroCartao', ''))
+    element['ranking'] = str(element.get('ranking', ''))
 
     # Adiciona a coluna DT_CARGA com a data e horário atual em UTC
     element['DT_CARGA'] = datetime.now(pytz.utc).strftime('%Y-%m-%d %H:%M:%S')
@@ -44,13 +42,15 @@ def remove_duplicates(elements):
 # Definindo o esquema dos dados
 def get_schema():
     return {
-        'nome': 'STRING',
-        'cpf': 'STRING',
-        'email': 'STRING',
-        'numeroConta': 'STRING',
-        'numeroCartao': 'STRING',
-        'ranking': 'STRING',
-        'DT_CARGA': 'STRING'
+        'fields': [
+            {'name': 'nome', 'type': 'STRING'},
+            {'name': 'cpf', 'type': 'STRING'},
+            {'name': 'email', 'type': 'STRING'},
+            {'name': 'numeroConta', 'type': 'STRING'},
+            {'name': 'numeroCartao', 'type': 'STRING'},
+            {'name': 'ranking', 'type': 'STRING'},
+            {'name': 'DT_CARGA', 'type': 'STRING'}
+        ]
     }
 
 def run():
