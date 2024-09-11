@@ -28,27 +28,23 @@ def preprocess_data(element):
 
     return element
 
-# Função para remover duplicatas com base no CPF
-def remove_duplicates(elements):
-    seen_cpfs = set()
-    unique_elements = []
-    for element in elements:
-        cpf = element['cpf']
-        if cpf not in seen_cpfs:
-            seen_cpfs.add(cpf)
-            unique_elements.append(element)
-    return unique_elements
+# Função para definir o esquema dos dados
+def get_ranking_schema():
+    return {
+        'fields': [
+            {'name': 'cpf', 'type': 'INT64'},
+            {'name': 'numeroConta', 'type': 'INT64'},
+            {'name': 'numeroCartao', 'type': 'INT64'},
+            {'name': 'ranking', 'type': 'STRING'}
+        ]
+    }
 
-# Definindo o esquema dos dados para o Parquet
-def get_schema():
+def get_resultado_schema():
     return {
         'fields': [
             {'name': 'nome', 'type': 'STRING'},
-            {'name': 'cpf', 'type': 'STRING'},
+            {'name': 'cpf', 'type': 'INT64'},
             {'name': 'email', 'type': 'STRING'},
-            {'name': 'numeroConta', 'type': 'STRING'},
-            {'name': 'numeroCartao', 'type': 'STRING'},
-            {'name': 'ranking', 'type': 'STRING'},
             {'name': 'DT_CARGA', 'type': 'STRING'}
         ]
     }
@@ -61,13 +57,14 @@ def run():
     ranking_file_path = 'C:/Users/User/OneDrive/Documentos/Luiz Gustavo/Teste Banco ABC/Teste-Banco-ABC/output/ranking_clientes.csv'
     resultado_file_path = 'C:/Users/User/OneDrive/Documentos/Luiz Gustavo/Teste Banco ABC/Teste-Banco-ABC/output/resultado_query.csv'
 
-    # Lê os arquivos CSV e aplica as transformações
+    # Lê e processa o arquivo ranking_clientes.csv
     ranking_clients = (
         p
         | 'Read ranking_clientes.csv' >> beam.io.ReadFromText(ranking_file_path, skip_header_lines=1)
         | 'Parse ranking_clientes' >> beam.Map(lambda line: dict(zip(['cpf', 'numeroConta', 'numeroCartao', 'ranking'], next(csv.reader([line])))))
     )
 
+    # Lê e processa o arquivo resultado_query.csv
     resultado_query = (
         p
         | 'Read resultado_query.csv' >> beam.io.ReadFromText(resultado_file_path, skip_header_lines=1)
@@ -75,18 +72,18 @@ def run():
         | 'Preprocess data' >> beam.Map(preprocess_data)
     )
 
-    # Junta os dois datasets pelo CPF e remove duplicatas
-    merged_data = (
-        {'ranking': ranking_clients, 'resultado': resultado_query}
-        | 'Merge datasets' >> beam.CoGroupByKey()
-        | 'Remove duplicates' >> beam.FlatMap(remove_duplicates)
+    # Salva a tabela ranking_clientes no formato Parquet
+    ranking_clients | 'Write ranking to Parquet' >> beam.io.WriteToParquet(
+        'output/ranking_clientes.parquet',
+        schema=get_ranking_schema(),
+        file_name_suffix='.parquet',
+        shard_name_template='',
     )
 
-    # Salva os dados processados no formato Parquet com esquema
-    merged_data | 'Write to Parquet' >> beam.io.WriteToParquet(
-        'output/processed_data.parquet',
-        schema=get_schema(),
-        # Define o formato do arquivo Parquet
+    # Salva a tabela resultado_query no formato Parquet
+    resultado_query | 'Write resultado to Parquet' >> beam.io.WriteToParquet(
+        'output/resultado_query.parquet',
+        schema=get_resultado_schema(),
         file_name_suffix='.parquet',
         shard_name_template='',
     )
