@@ -1,74 +1,55 @@
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
-import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
+import csv
 import unicodedata
 from datetime import datetime
 import pytz
 
-# Função para remover duplicados
-def remove_duplicates(element):
-    return element[0], element[1]
+# Função para remover acentuação e espaços em branco e padronizar em maiúsculas
+def preprocess_text(text):
+    if text:
+        text = text.strip()  # Remove espaços em branco
+        text = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('utf-8')  # Remove acentuação
+        return text.upper()  # Padroniza em maiúsculas
+    return text
 
+# Função de pré-processamento
+def preprocess_data(element):
+    # Preprocessa as colunas de cada arquivo
+    element['nome'] = preprocess_text(element.get('nome', ''))
+    element['cpf'] = element.get('cpf', '')
+    element['email'] = preprocess_text(element.get('email', ''))
 
-# Função para remover acentuação e padronizar maiúsculas
-def preprocess_string(s):
-    nfkd = unicodedata.normalize('NFKD', s)
-    return u"".join([c for c in nfkd if not unicodedata.combining(c)]).upper().strip()
+    # Adiciona a coluna DT_CARGA com a data e horário atual em UTC
+    element['DT_CARGA'] = datetime.now(pytz.utc).strftime('%Y-%m-%d %H:%M:%S')
 
-
-# Função para pré-processar os dados
-def preprocess_data(row):
-    row['nome'] = preprocess_string(row['nome'])
-    row['email'] = preprocess_string(row['email'])
-    row['cidade'] = preprocess_string(row['cidade'])
-    return row
-
-
-# Função para adicionar a coluna DT_CARGA
-def add_load_date(element):
-    utc_now = datetime.now(pytz.utc).strftime('%Y-%m-%d %H:%M:%S')
-    element['DT_CARGA'] = utc_now
     return element
 
+# Função para remover duplicatas com base no CPF
+def remove_duplicates(elements):
+    seen_cpfs = set()
+    unique_elements = []
+    for element in elements:
+        cpf = element['cpf']
+        if cpf not in seen_cpfs:
+            seen_cpfs.add(cpf)
+            unique_elements.append(element)
+    return unique_elements
 
-# Função para salvar o dataframe em formato parquet
-def write_parquet(data, output_path):
-    table = pa.Table.from_pandas(pd.DataFrame(data))
-    pq.write_table(table, output_path)
-
-
-# Definir o pipeline
-def run_pipeline():
+def run():
     options = PipelineOptions()
+    p = beam.Pipeline(options=options)
 
-    with beam.Pipeline(options=options) as p:
-        # Lendo os CSVs
-        resultado = (
-            p
-            | 'Ler resultado_query CSV' >> beam.io.ReadFromText('output/resultado_query.csv', skip_header_lines=1)
-            | 'Dividir CSV Resultado' >> beam.Map(lambda line: dict(zip(['cpf', 'nome', 'email', 'cidade'], line.split(','))))
-        )
-        
-        ranking = (
-            p
-            | 'Ler ranking_query CSV' >> beam.io.ReadFromText('output/ranking_query.csv', skip_header_lines=1)
-            | 'Dividir CSV Ranking' >> beam.Map(lambda line: dict(zip(['cpf', 'ranking'], line.split(','))))
-        )
-        
-        # Pré-processamento dos dados
-        resultado = (
-            resultado
-            | 'Remover duplicados' >> beam.Distinct()
-            | 'Pré-processar strings' >> beam.Map(preprocess_data)
-            | 'Adicionar DT_CARGA' >> beam.Map(add_load_date)
-        )
-        
-        # Salvando os resultados em parquet
-        resultado | 'Escrever Parquet Resultado' >> beam.Map(write_parquet, 'output/resultado_query_processed.parquet')
-        ranking | 'Escrever Parquet Ranking' >> beam.Map(write_parquet, 'output/ranking_query_processed.parquet')
+    # Lê os arquivos CSV e aplica as transformações
+    ranking_clients = (
+        p
+        | 'Read ranking_clients.csv' >> beam.io.ReadFromText('output/ranking_clients.csv', skip_header_lines=1)
+        | 'Parse ranking_clients' >> beam.Map(lambda line: dict(zip(['cpf', 'numeroConta', 'numeroCartao', 'ranking'], next(csv.reader([line])))))
+    )
 
-
-if __name__ == '__main__':
-    run_pipeline()
+    resultado_query = (
+        p
+        | 'Read resultado_query.csv' >> beam.io.ReadFromText('output/resultado_query.csv', skip_header_lines=1)
+        | 'Parse resultado_query' >> beam.Map(lambda line: dict(zip(['nome', 'cpf', 'email'], next(csv.reader([line])))))
+        | 'Preprocess data' >> beam.Map(preprocess_data)
+    )
