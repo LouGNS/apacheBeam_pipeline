@@ -168,32 +168,31 @@ Este projeto contém um pipeline Apache Beam para processar e transformar dados 
 2. **Pré-processamento**: Adiciona uma coluna com a data e hora atual, e converte valores para os tipos apropriados.
 3. **Gravação em Parquet**: Grava os dados processados em arquivos Parquet.
 
-## Requisitos
-
-Antes de executar o pipeline, certifique-se de ter as seguintes dependências instaladas:
 
 ## Estrutura do Código
 O código está organizado da seguinte forma:
 
-1. Função preprocess_data(element):
+**1. Função preprocess_data(element):**
 
 - **Adiciona a coluna DT_CARGA com a data e hora atual em UTC.** 
 
 - **Converte os valores das colunas cpf, numeroConta, e numeroCartao para inteiros, se presente e se o valor for numérico.**
 
 
-2. Função run():
-- ** **
+**2. Função run():**
+
 - **Define os caminhos para os arquivos CSV de entrada.**
 - **Lê e processa os dados dos arquivos CSV**.
 - **Escreve os dados processados em arquivos Parquet.**
 
 ## Como Usar
 
-1. Configure os Caminhos dos Arquivos:
+**1. Configure os Caminhos dos Arquivos:**
 
 - **Modifique as variáveis ranking_file_path e resultado_file_path na função run() para os caminhos absolutos dos seus arquivos CSV.**
-2. Execute o Pipeline:
+
+
+**2. Execute o Pipeline:**
 
 - **Salve o código em um arquivo Python, por exemplo, pipeline.py.**
 - **Execute o script Python:**
