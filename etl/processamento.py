@@ -6,3 +6,10 @@ import pyarrow.parquet as pq
 import unicodedata
 from datetime import datetime
 import pytz
+
+# Função para pré-processar os dados
+def preprocess_data(row):
+    row['nome'] = preprocess_string(row['nome'])
+    row['email'] = preprocess_string(row['email'])
+    row['cidade'] = preprocess_string(row['cidade'])
+    return row
