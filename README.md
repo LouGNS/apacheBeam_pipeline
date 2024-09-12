@@ -149,6 +149,7 @@ Certifique-se de que você tem os seguintes pré-requisitos instalados:
 - Python 3.12.6 ou superior
 - Apache Beam
 - PyArrow
+- pytz
 
 Você pode instalar as dependências necessárias com o seguinte comando:
 
@@ -169,34 +170,55 @@ pip install apache-beam pyarrow pandas pytz
 Este projeto contém um pipeline Apache Beam para processar e transformar dados de arquivos CSV em arquivos Parquet. O pipeline realiza as seguintes operações:
 
 1. **Leitura de Dados**: Lê arquivos CSV contendo informações de clientes e resultados de consultas.
-2. **Pré-processamento**: Adiciona uma coluna com a data e hora atual, e converte valores para os tipos apropriados.
+2. **Pré-processamento**: Adiciona uma coluna com a data e hora atual, converte valores para os tipos apropriados e deduplica o dado.
 3. **Gravação em Parquet**: Grava os dados processados em arquivos Parquet.
 
 
 ## Estrutura do Código
-O código está organizado da seguinte forma:
+O código implementa um pipeline de processamento de dados utilizando o Apache Beam. A função principal do pipeline é ler dados de arquivos CSV, realizar o pré-processamento (como remoção de duplicatas, normalização de strings e adição de uma coluna com a data e hora da carga dos dados) e salvar os resultados no formato Parquet.
 
-**1. Função preprocess_data(element):**
+### Fluxo Geral
 
-- **Adiciona a coluna DT_CARGA com a data e hora atual em UTC.** 
+1. **Leitura de Arquivos CSV:** Os arquivos `ranking_clientes.csv` e `resultado_query.csv` são lidos para criação de coleções de dados (`PCollections`).
+   
+2. **Pré-processamento de Dados:** 
+   - Adiciona a coluna `DT_CARGA` com a data e hora atuais (no formato UTC).
+   - Remove duplicatas com base no campo `cpf`.
+   - Converte as strings para maiúsculas e remove acentuação e espaços em branco.
 
-- **Converte os valores das colunas cpf, numeroConta, e numeroCartao para inteiros, se presente e se o valor for numérico.**
+3. **Conversão de Tipos:** As colunas `cpf`, `numeroConta`, e `numeroCartao` são convertidas para o tipo `int` quando aplicável.
 
+4. **Gravação no Formato Parquet:** Os dados pré-processados são gravados em arquivos Parquet, com esquemas definidos usando `pyarrow`.
 
-**2. Função run():**
+### Principais Componentes
 
-- **Define os caminhos para os arquivos CSV de entrada.**
-- **Lê e processa os dados dos arquivos CSV**.
-- **Escreve os dados processados em arquivos Parquet.**
+- **delete_if_exists(file_path):** Remove arquivos de saída existentes antes da execução do pipeline.
+  
+- **preprocess_data(element):** Realiza a adição da coluna `DT_CARGA`, normalização de strings e conversão de tipos em cada elemento.
 
-## Como Usar
+- **extract_cpf(element):** Extrai o CPF de um elemento para auxiliar no processo de deduplicação.
 
-**1. Configure os Caminhos dos Arquivos:**
+- **read_csv(file_path, schema):** Lê os arquivos CSV e aplica o esquema definido.
 
-- **Modifique as variáveis ranking_file_path e resultado_file_path na função run() para os caminhos absolutos dos seus arquivos CSV.**
+- **Esquemas Parquet:** 
+  - `ranking_schema_arrow`: Define o esquema para o arquivo `ranking_clientes.parquet`.
+  - `resultado_schema_arrow`: Define o esquema para o arquivo `resultado_query.parquet`.
 
+### Deduplicação
 
-**2. Execute o Pipeline:**
+A deduplicação ocorre agrupando os registros pelo CPF. Em seguida, o pipeline seleciona o primeiro registro de cada grupo para garantir que não haja duplicatas nos dados finais.
+
+### Esquemas dos Arquivos Parquet
+
+- **ranking_clientes.parquet:** Contém os campos `cpf`, `numeroConta`, `numeroCartao`, `ranking`, e `DT_CARGA`.
+  
+- **resultado_query.parquet:** Contém os campos `nome`, `cpf`, `email`, e `DT_CARGA`.
+
+### Execução do Pipeline
+
+A execução do pipeline começa pela leitura dos arquivos CSV, seguida pelo pré-processamento e, finalmente, pela gravação dos dados no formato Parquet.
+
+**5. Execute o Pipeline:**
 
 - **Salve o código em um arquivo Python, por exemplo, pipeline.py.**
 - **Execute o script Python:**
