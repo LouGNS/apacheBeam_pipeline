@@ -5,12 +5,26 @@ import pyarrow as pa
 import csv
 from datetime import datetime
 import pytz
+import unicodedata
 
 # Função para excluir arquivos existentes
 def delete_if_exists(file_path):
     if os.path.exists(file_path):
         os.remove(file_path)
 
+# Função para remover acentuação, espaços e padronizar strings
+def normalize_string(value):
+    if value:
+        # Remover acentuação
+        value = ''.join(
+            char for char in unicodedata.normalize('NFKD', value) 
+            if not unicodedata.combining(char)
+        )
+        # Remover espaços em branco e padronizar para maiúsculas
+        return value.strip().upper()
+    return value
+
+# Função de pré-processamento
 def preprocess_data(element):
     element['DT_CARGA'] = datetime.now(pytz.utc).strftime('%Y-%m-%d %H:%M:%S')
 
@@ -21,7 +35,12 @@ def preprocess_data(element):
         element['numeroConta'] = int(element['numeroConta'])
     if 'numeroCartao' in element:
         element['numeroCartao'] = int(element['numeroCartao'])
-    
+
+    # Normalizando strings
+    for key in element:
+        if isinstance(element[key], str):
+            element[key] = normalize_string(element[key])
+
     return element
 
 def extract_cpf(element):
